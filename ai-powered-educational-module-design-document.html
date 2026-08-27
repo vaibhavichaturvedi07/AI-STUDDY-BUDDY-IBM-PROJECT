@@ -1,0 +1,905 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>AI Study Buddy — Educational Module Design</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #ffffff;
+    --surface: #f7f8fa;
+    --border:  #e5e7eb;
+    --text:    #1f2328;
+    --muted:   #57606a;
+    --accent:  #3b82d4;
+    --purple:  #7c5cd8;
+    --green:   #16a34a;
+    --amber:   #b45309;
+    --red:     #dc2626;
+    --radius:  6px;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .doc-header { border-bottom: 2px solid var(--border); padding-bottom: 24px; margin-bottom: 36px; }
+  .doc-header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+  .doc-header .subtitle { color: var(--muted); margin-top: 6px; font-size: .9rem; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: .75rem; font-weight: 600; border: 1px solid;
+  }
+  .badge-blue   { color: var(--accent); border-color: #bfdbfe; background: #eff6ff; }
+  .badge-purple { color: var(--purple); border-color: #ddd6fe; background: #f5f3ff; }
+  .badge-green  { color: var(--green);  border-color: #bbf7d0; background: #f0fdf4; }
+  .badge-amber  { color: var(--amber);  border-color: #fde68a; background: #fffbeb; }
+  .badge-red    { color: var(--red);    border-color: #fecaca; background: #fef2f2; }
+
+  /* ── TOC ── */
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 40px; }
+  .toc h2 { font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 5px 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 52px; }
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;
+  }
+  .section-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: .75rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-num.purple { background: var(--purple); }
+  .section-num.green  { background: var(--green);  }
+  .section-num.amber  { background: var(--amber);  }
+  .section-num.red    { background: var(--red);    }
+  .section-num.teal   { background: #0891b2; }
+  .section-num.gray   { background: #6b7280; }
+  h2.section-title { font-size: 1.15rem; font-weight: 700; }
+
+  h3 { font-size: .95rem; font-weight: 700; margin: 20px 0 8px; }
+  h4 { font-size: .85rem; font-weight: 600; margin: 14px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  p  { margin-bottom: 10px; color: var(--text); }
+  p.muted { color: var(--muted); font-size: .88rem; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { margin: 4px 0; }
+
+  /* ── Code & inline ── */
+  code {
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    font-size: .82rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: .8rem;
+    line-height: 1.55;
+    margin: 12px 0 16px;
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .kw  { color: #cba6f7; }
+  .fn  { color: #89b4fa; }
+  .st  { color: #a6e3a1; }
+  .cm  { color: #6c7086; }
+  .py  { color: #fab387; }
+  .num { color: #f38ba8; }
+
+  /* ── Cards & boxes ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card h3 { margin-top: 0; }
+  .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 620px) { .card-row { grid-template-columns: 1fr; } }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: #eff6ff;
+    padding: 10px 14px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 12px 0;
+    font-size: .88rem;
+  }
+  .callout.purple { border-color: var(--purple); background: #f5f3ff; }
+  .callout.green  { border-color: var(--green);  background: #f0fdf4; }
+  .callout.amber  { border-color: var(--amber);  background: #fffbeb; }
+
+  /* ── Flow diagram ── */
+  .flow {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 14px 0;
+  }
+  .flow-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 14px;
+    font-size: .8rem; font-weight: 600; text-align: center;
+    white-space: nowrap;
+  }
+  .flow-box.accent  { background: #eff6ff; border-color: #93c5fd; color: var(--accent); }
+  .flow-box.purple  { background: #f5f3ff; border-color: #c4b5fd; color: var(--purple); }
+  .flow-box.green   { background: #f0fdf4; border-color: #86efac; color: var(--green);  }
+  .flow-box.amber   { background: #fffbeb; border-color: #fcd34d; color: var(--amber);  }
+  .flow-arrow { font-size: .9rem; color: var(--muted); padding: 0 6px; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; margin: 12px 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: .83rem; }
+  th { background: var(--surface); font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid var(--border); }
+  td { padding: 7px 12px; border: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+
+  /* ── Arch diagram ── */
+  .arch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+  @media (max-width: 580px) { .arch { grid-template-columns: 1fr; } }
+  .arch-layer {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; text-align: center;
+  }
+  .arch-layer .layer-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+  .arch-layer .layer-item { font-size: .78rem; padding: 4px 8px; margin: 3px 0; border-radius: 3px; background: var(--surface); border: 1px solid var(--border); }
+
+  /* ── Footer ── */
+  .doc-footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--border); text-align: center; font-size: .75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+
+<div class="doc-header">
+  <h1>AI-Powered Educational Module</h1>
+  <div class="subtitle">Architecture &amp; Design Document — AI Study Buddy · FastAPI Backend</div>
+  <div class="badge-row">
+    <span class="badge badge-blue">Python 3.12 · FastAPI</span>
+    <span class="badge badge-purple">IBM watsonx.ai · OpenAI</span>
+    <span class="badge badge-green">PostgreSQL · SQLAlchemy Async</span>
+    <span class="badge badge-amber">SM-2 Spaced Repetition</span>
+    <span class="badge badge-red">JWT Auth</span>
+  </div>
+</div>
+
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s0">System Architecture Overview</a></li>
+    <li><a href="#s1">Module 1 — PDF Summarization</a></li>
+    <li><a href="#s2">Module 2 — Flashcard Generation</a></li>
+    <li><a href="#s3">Module 3 — Quiz Creation &amp; Auto-Scoring</a></li>
+    <li><a href="#s4">Module 4 — Personalized Recommendations</a></li>
+    <li><a href="#s5">Module 5 — Tutor-Style Chatbot</a></li>
+    <li><a href="#s6">Module 6 — Analytics &amp; Weak-Topic Detection</a></li>
+    <li><a href="#s7">Cross-Cutting: AI Provider Abstraction</a></li>
+    <li><a href="#s8">Data Model Summary</a></li>
+    <li><a href="#s9">API Surface Reference</a></li>
+    <li><a href="#s10">Extension Points &amp; Future Work</a></li>
+  </ol>
+</div>
+
+
+<div class="section" id="s0">
+  <div class="section-header">
+    <div class="section-num gray">0</div>
+    <h2 class="section-title">System Architecture Overview</h2>
+  </div>
+
+  <p>The Study Buddy backend is a <strong>modular FastAPI application</strong> where every AI-powered feature is encapsulated in its own route module backed by a dedicated service layer. The six educational capabilities are independent — they can be deployed, scaled, and tested separately — yet share a common AI provider abstraction, a single PostgreSQL database, and one JWT-authenticated request context.</p>
+
+  <div class="arch">
+    <div class="arch-layer">
+      <div class="layer-title">HTTP Layer</div>
+      <div class="layer-item">routes/documents.py</div>
+      <div class="layer-item">routes/quizzes.py</div>
+      <div class="layer-item">routes/flashcards.py</div>
+      <div class="layer-item">routes/chat.py</div>
+      <div class="layer-item">routes/analytics.py</div>
+      <div class="layer-item">routes/study_sessions.py</div>
+    </div>
+    <div class="arch-layer">
+      <div class="layer-title">Service Layer</div>
+      <div class="layer-item">services/ai_service.py</div>
+      <div class="layer-item">services/document_service.py</div>
+      <div class="layer-item">services/auth_service.py</div>
+    </div>
+    <div class="arch-layer">
+      <div class="layer-title">Infrastructure</div>
+      <div class="layer-item">models.py (ORM)</div>
+      <div class="layer-item">schemas.py (Pydantic)</div>
+      <div class="layer-item">database.py (asyncpg)</div>
+      <div class="layer-item">config.py (Settings)</div>
+      <div class="layer-item">PostgreSQL</div>
+      <div class="layer-item">uploads/ (disk)</div>
+    </div>
+  </div>
+
+  <h3>Request Lifecycle</h3>
+  <div class="flow">
+    <div class="flow-box accent">Browser / Client</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">FastAPI Router</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">JWT Middleware</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Route Handler</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">ai_service / doc_service</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">PostgreSQL</div>
+  </div>
+
+  <div class="callout">
+    <strong>AI Provider Switching.</strong> A single environment variable <code>AI_PROVIDER=openai|watsonx</code> switches the entire application between OpenAI GPT and IBM watsonx.ai without code changes. All six modules route through the same <code>_call_llm()</code> function with 3× exponential-backoff retry.
+  </div>
+</div>
+
+
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2 class="section-title">Module 1 — PDF Summarization</h2>
+  </div>
+
+  <h3>Purpose</h3>
+  <p>When a user uploads a document (PDF, DOCX, TXT, or Markdown), the system automatically extracts its text content and asks the AI to produce a human-readable summary and a list of key concepts. This gives learners an instant overview before reading the full material.</p>
+
+  <h3>Data Flow</h3>
+  <div class="flow">
+    <div class="flow-box accent">POST /documents/upload</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">save_upload()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Document{status=pending}</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box amber">BackgroundTask</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">extract_text()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">summarize_document()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">Document{status=ready}</div>
+  </div>
+
+  <h3>Text Extraction — <code>document_service.py</code></h3>
+  <div class="card-row">
+    <div class="card">
+      <h3>Supported Formats</h3>
+      <ul>
+        <li><strong>PDF</strong> — <code>pypdf.PdfReader</code>, page-by-page, double-newline join</li>
+        <li><strong>DOCX</strong> — <code>python-docx</code>, paragraph join, page estimate at 300 wds/page</li>
+        <li><strong>TXT / MD</strong> — direct <code>Path.read_text()</code> with UTF-8 + error replace</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Return Contract</h3>
+      <pre><code><span class="fn">extract_text</span>(file_path, file_type)
+  → (raw_text: str,
+     word_count: int,
+     page_count: int)</code></pre>
+      <p class="muted">Stored on <code>Document.raw_text</code>, <code>.word_count</code>, <code>.page_count</code></p>
+    </div>
+  </div>
+
+  <h3>Chunking Strategy</h3>
+  <p><code>chunk_text(text, max_words=3000)</code> splits long documents on paragraph boundaries before sending to the AI, ensuring the prompt always fits within the model's context window. Each call to <code>summarize_document()</code> receives at most the first 8,000 characters of <code>raw_text</code>.</p>
+
+  <h3>AI Prompt — <code>summarize_document(text, style)</code></h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Style</th><th>Instruction sent to LLM</th></tr>
+      <tr><td><code>concise</code></td><td>2–3 paragraph summary of main points (default)</td></tr>
+      <tr><td><code>detailed</code></td><td>Thorough coverage of all major topics and arguments</td></tr>
+      <tr><td><code>bullet_points</code></td><td>Organised bullet points grouped by topic</td></tr>
+    </table>
+  </div>
+
+  <p>The model is instructed to respond exclusively with a JSON object. The <code>_extract_json()</code> helper strips optional markdown fences and parses the result:</p>
+  <pre><code><span class="cm"># Expected LLM response</span>
+{
+  <span class="st">"summary"</span>: <span class="st">"..."</span>,
+  <span class="st">"key_concepts"</span>: [<span class="st">"Newton's laws"</span>, <span class="st">"inertia"</span>, <span class="st">"momentum"</span>]
+}</code></pre>
+
+  <h3>API Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      <tr><td><code>POST</code></td><td><code>/documents/upload</code></td><td>Upload file; processing runs in background</td></tr>
+      <tr><td><code>GET</code></td><td><code>/documents/{id}</code></td><td>Poll until <code>status == "ready"</code></td></tr>
+      <tr><td><code>POST</code></td><td><code>/documents/{id}/summarize</code></td><td>Re-generate with a different style</td></tr>
+      <tr><td><code>POST</code></td><td><code>/documents/{id}/reprocess</code></td><td>Re-run full extraction + summarization</td></tr>
+    </table>
+  </div>
+
+  <div class="callout amber">
+    <strong>Background isolation.</strong> The background task uses its own <code>AsyncSessionLocal()</code> session — not the request-scoped session — to avoid lifetime issues when the HTTP response has already been sent.
+  </div>
+</div>
+
+
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num purple">2</div>
+    <h2 class="section-title">Module 2 — Flashcard Generation</h2>
+  </div>
+
+  <h3>Purpose</h3>
+  <p>The AI distills a document into study cards: a front face (question or term), a back face (answer or definition), and an optional hint. Cards are stored in a <em>deck</em> linked to the source document and support SM-2 spaced repetition for intelligent review scheduling.</p>
+
+  <h3>Generation Flow</h3>
+  <div class="flow">
+    <div class="flow-box accent">POST /flashcards/generate</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Verify doc.status == ready</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">generate_flashcards(text, n)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">FlashcardDeck + n×Flashcard</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">201 FlashcardDeckOut</div>
+  </div>
+
+  <h3>AI Prompt — <code>generate_flashcards(text, num_cards)</code></h3>
+  <p>The LLM is asked to return a JSON array where each element follows this schema:</p>
+  <pre><code>[
+  {
+    <span class="st">"front"</span>: <span class="st">"What is Newton's second law?"</span>,
+    <span class="st">"back"</span>: <span class="st">"F = ma — force equals mass times acceleration"</span>,
+    <span class="st">"hint"</span>: <span class="st">"Think about what changes when you push harder"</span>
+  }
+]</code></pre>
+
+  <h3>SM-2 Spaced Repetition</h3>
+  <p>Every card carries four SM-2 tracking fields. After each review session, <code>POST /flashcards/cards/{id}/review</code> updates them using the original Anki/SuperMemo-2 algorithm:</p>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Card Fields (DB)</h3>
+      <ul>
+        <li><code>ease_factor</code> — starts at 2.5, floored at 1.3</li>
+        <li><code>interval_days</code> — days until next review</li>
+        <li><code>repetitions</code> — consecutive successful reviews</li>
+        <li><code>next_review</code> — scheduled UTC datetime</li>
+        <li><code>last_reviewed_at</code> — timestamp of last review</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Quality Grades (0–5)</h3>
+      <ul>
+        <li><strong>0</strong> — Complete blackout → reset interval to 1</li>
+        <li><strong>1–2</strong> — Wrong → reset repetitions to 0</li>
+        <li><strong>3</strong> — Correct but hard effort</li>
+        <li><strong>4</strong> — Correct with hesitation</li>
+        <li><strong>5</strong> — Perfect → max interval growth</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># SM-2 update logic (flashcards.py)</span>
+<span class="kw">if</span> q &gt;= <span class="num">3</span>:
+    new_ef = ease_factor + (<span class="num">0.1</span> - (<span class="num">5</span> - q) * (<span class="num">0.08</span> + (<span class="num">5</span> - q) * <span class="num">0.02</span>))
+    card.ease_factor   = max(<span class="num">1.3</span>, new_ef)
+    card.interval_days = max(<span class="num">1</span>, round(interval_days * ease_factor))
+    card.repetitions  += <span class="num">1</span>
+<span class="kw">else</span>:
+    card.interval_days = <span class="num">1</span>
+    card.repetitions   = <span class="num">0</span>
+card.next_review = now + timedelta(days=card.interval_days)</code></pre>
+
+  <h3>API Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      <tr><td><code>POST</code></td><td><code>/flashcards/generate</code></td><td>AI-generate a deck from a document</td></tr>
+      <tr><td><code>GET</code></td><td><code>/flashcards/</code></td><td>Paginated list of decks</td></tr>
+      <tr><td><code>GET</code></td><td><code>/flashcards/{deck_id}</code></td><td>Deck with all cards</td></tr>
+      <tr><td><code>GET</code></td><td><code>/flashcards/{deck_id}/due</code></td><td>Cards due for review (SM-2 queue)</td></tr>
+      <tr><td><code>POST</code></td><td><code>/flashcards/cards/{id}/review</code></td><td>Submit quality grade, update SM-2</td></tr>
+      <tr><td><code>POST</code></td><td><code>/flashcards/{deck_id}/cards</code></td><td>Manually add a card</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num green">3</div>
+    <h2 class="section-title">Module 3 — Quiz Creation &amp; Auto-Scoring</h2>
+  </div>
+
+  <h3>Purpose</h3>
+  <p>The system generates multiple-choice quizzes directly from uploaded document text at three difficulty levels (easy / medium / hard). Student answers are graded instantly in the backend — not the browser — and every attempt is persisted for progress tracking.</p>
+
+  <h3>Generation Flow</h3>
+  <div class="flow">
+    <div class="flow-box accent">POST /quizzes/generate</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">doc.status == ready?</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">generate_quiz(text, n, diff)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Quiz{questions: JSON}</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">201 QuizOut</div>
+  </div>
+
+  <h3>Question Schema (stored as JSON column)</h3>
+  <pre><code>{
+  <span class="st">"id"</span>: <span class="num">1</span>,
+  <span class="st">"question"</span>: <span class="st">"Which law states F = ma?"</span>,
+  <span class="st">"options"</span>: [<span class="st">"Newton's 1st"</span>, <span class="st">"Newton's 2nd"</span>, <span class="st">"Newton's 3rd"</span>, <span class="st">"Hooke's Law"</span>],
+  <span class="st">"correct_answer"</span>: <span class="num">1</span>,   <span class="cm">// 0-based index</span>
+  <span class="st">"explanation"</span>: <span class="st">"F = ma defines the second law of motion."</span>
+}</code></pre>
+
+  <h3>Auto-Scoring Engine — <code>POST /quizzes/{id}/submit</code></h3>
+  <p>The route receives a flat array of zero-based choice indices (one per question). It iterates the stored questions, compares each submitted index against <code>correct_answer</code>, and builds a detailed per-question result:</p>
+
+  <pre><code><span class="kw">for</span> i, q <span class="kw">in</span> <span class="fn">enumerate</span>(questions):
+    is_correct = payload.answers[i] == q[<span class="st">"correct_answer"</span>]
+    details.<span class="fn">append</span>(QuizResultDetail(
+        question_id    = q[<span class="st">"id"</span>],
+        your_answer    = payload.answers[i],
+        correct_answer = q[<span class="st">"correct_answer"</span>],
+        is_correct     = is_correct,
+        explanation    = q.get(<span class="st">"explanation"</span>, <span class="st">""</span>),
+    ))
+score = (correct / <span class="fn">len</span>(questions)) * <span class="num">100</span></code></pre>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>QuizSubmitResult fields</h3>
+      <ul>
+        <li><code>score</code> — 0–100 float</li>
+        <li><code>correct / total</code> — counts</li>
+        <li><code>passed</code> — <code>score ≥ 60</code> (configurable)</li>
+        <li><code>results</code> — per-question detail list</li>
+        <li><code>attempt_id</code> — UUID of persisted attempt</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>QuizAttempt (DB)</h3>
+      <ul>
+        <li><code>quiz_id / user_id</code></li>
+        <li><code>answers[]</code> — submitted indices</li>
+        <li><code>score / correct_answers</code></li>
+        <li><code>time_taken_seconds</code></li>
+        <li><code>completed_at</code> — UTC timestamp</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>API Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      <tr><td><code>POST</code></td><td><code>/quizzes/generate</code></td><td>Generate quiz from document</td></tr>
+      <tr><td><code>GET</code></td><td><code>/quizzes/</code></td><td>Paginated list, filter by <code>document_id</code></td></tr>
+      <tr><td><code>POST</code></td><td><code>/quizzes/{id}/submit</code></td><td>Grade attempt, persist to DB</td></tr>
+      <tr><td><code>GET</code></td><td><code>/quizzes/{id}/attempts</code></td><td>Paginated attempt history</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num amber">4</div>
+    <h2 class="section-title">Module 4 — Personalized Recommendations</h2>
+  </div>
+
+  <h3>Current Implementation (Data-Driven)</h3>
+  <p>Recommendations are generated by the <strong>analytics engine</strong> from real usage data — no separate LLM call is required. The system identifies weak areas algorithmically from <code>QuizAttempt</code> scores and <code>StudySession</code> time distributions, then surfaces actionable next steps.</p>
+
+  <h3>Signal Sources</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Signal</th><th>Source Table</th><th>How It's Used</th></tr>
+      <tr><td>Quiz scores per document</td><td><code>quiz_attempts</code> → <code>quizzes</code></td><td>Documents with avg score &lt; 60% are flagged as weak topics</td></tr>
+      <tr><td>Flashcard ease factors</td><td><code>flashcards.ease_factor</code></td><td>Cards at 1.3 (minimum) indicate persistent difficulty</td></tr>
+      <tr><td>SM-2 review queue depth</td><td><code>flashcards.next_review ≤ now()</code></td><td>Large due queues = neglected material</td></tr>
+      <tr><td>Study session frequency</td><td><code>study_sessions.created_at</code></td><td>Streak breaks = topics not revisited</td></tr>
+      <tr><td>Document processing rate</td><td><code>documents.status</code></td><td>Unprocessed docs = unused learning material</td></tr>
+    </table>
+  </div>
+
+  <h3>Recommendation Logic (in <code>analytics.py</code>)</h3>
+  <p>The <code>GET /analytics/summary</code> endpoint returns a <code>top_documents</code> list ranked by activity (quiz count + deck count + avg score). This list is the primary recommendation surface. The frontend presents it as "Most Active Documents" and "Needs Attention" based on score thresholds:</p>
+
+  <pre><code><span class="cm"># In analytics.py — top documents ranked by engagement</span>
+top_docs = await _top_documents(uid, db, limit=<span class="num">5</span>)
+
+<span class="cm"># DocumentStat schema</span>
+{
+  <span class="st">"document_id"</span>: <span class="st">"uuid"</span>,
+  <span class="st">"title"</span>: <span class="st">"Physics Notes"</span>,
+  <span class="st">"quiz_count"</span>: <span class="num">3</span>,
+  <span class="st">"deck_count"</span>: <span class="num">1</span>,
+  <span class="st">"avg_quiz_score"</span>: <span class="num">54.2</span>    <span class="cm">// below 60 → recommend review</span>
+}</code></pre>
+
+  <h3>Extension Point — AI Recommendations</h3>
+  <p>To add LLM-powered personalized study plans, inject an <code>explain_concept()</code> call referencing the weak document's <code>key_concepts</code> field:</p>
+  <pre><code><span class="cm"># Proposed future endpoint: POST /analytics/recommendations</span>
+weak_docs = [d <span class="kw">for</span> d <span class="kw">in</span> top_docs <span class="kw">if</span> d.avg_quiz_score &lt; <span class="num">60</span>]
+<span class="kw">for</span> doc <span class="kw">in</span> weak_docs:
+    plan = await <span class="fn">explain_concept</span>(
+        concept=<span class="st">f"Study plan for: {doc.title}"</span>,
+        context=doc.raw_text[:<span class="num">2000</span>]
+    )
+    recommendations.<span class="fn">append</span>({<span class="st">"doc"</span>: doc.title, <span class="st">"plan"</span>: plan})</code></pre>
+
+  <div class="callout purple">
+    <strong>SM-2 is itself a recommendation engine.</strong> The <code>GET /flashcards/{deck_id}/due</code> endpoint returns exactly the cards that need attention <em>right now</em>, ranked by overdue interval. This is automatically personalised — no prompt engineering required.
+  </div>
+</div>
+
+
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num red">5</div>
+    <h2 class="section-title">Module 5 — Tutor-Style Chatbot</h2>
+  </div>
+
+  <h3>Purpose</h3>
+  <p>The AI tutor provides a conversational interface where students ask questions in natural language and receive explanations, worked examples, and follow-up prompts. Sessions can be anchored to a specific uploaded document so the AI grounds its answers in the student's actual study material.</p>
+
+  <h3>Session Architecture</h3>
+  <div class="card-row">
+    <div class="card">
+      <h3>ChatSession (DB)</h3>
+      <ul>
+        <li><code>id</code> — UUID</li>
+        <li><code>owner_id</code> → User (CASCADE)</li>
+        <li><code>document_id</code> → Document (nullable, SET NULL)</li>
+        <li><code>title</code> — auto-set or user-named</li>
+        <li><code>messages[]</code> — ordered by <code>created_at</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>ChatMessage (DB)</h3>
+      <ul>
+        <li><code>role</code> — <code>user | assistant | system</code></li>
+        <li><code>content</code> — full text</li>
+        <li><code>tokens_used</code> — for cost tracking</li>
+        <li><code>created_at</code> — UTC timestamp</li>
+        <li>Index on <code>(session_id, created_at)</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Message Flow — <code>POST /chat/sessions/{id}/messages</code></h3>
+  <div class="flow">
+    <div class="flow-box accent">User message</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Load session history (last 10)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Load doc.raw_text (if linked)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">chat_with_tutor()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Persist user + AI messages</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">ChatMessageOut</div>
+  </div>
+
+  <h3>Document Context Injection</h3>
+  <p>When a session has a <code>document_id</code>, the route loads <code>document.raw_text</code> and passes the first 4,000 characters to <code>chat_with_tutor()</code> as <code>document_context</code>. The system prompt becomes:</p>
+  <pre><code><span class="st">"You are a friendly, knowledgeable AI study tutor. "</span>
+<span class="st">"... "</span>
+<span class="st">"The student is studying the document excerpted below. "</span>
+<span class="st">"Use it as your primary reference when answering.\n\n"</span>
+<span class="st">"--- DOCUMENT CONTEXT ---\n{raw_text[:4000]}\n--- END CONTEXT ---"</span></code></pre>
+
+  <h3>Multi-Turn History</h3>
+  <p>The last 10 messages (5 turns) are loaded from the database and included in the prompt. For <strong>OpenAI</strong>, they are formatted as a structured <code>messages[]</code> array. For <strong>watsonx</strong>, they are flattened into a single text block with <code>[USER]</code> / <code>[ASSISTANT]</code> role tags, since the watsonx SDK uses a single-string prompt format.</p>
+
+  <h3>API Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      <tr><td><code>POST</code></td><td><code>/chat/sessions</code></td><td>Create session (optionally link a document)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/chat/sessions</code></td><td>Paginated session list</td></tr>
+      <tr><td><code>GET</code></td><td><code>/chat/sessions/{id}</code></td><td>Session with paginated message history</td></tr>
+      <tr><td><code>POST</code></td><td><code>/chat/sessions/{id}/messages</code></td><td>Send message → AI reply</td></tr>
+      <tr><td><code>PATCH</code></td><td><code>/chat/sessions/{id}</code></td><td>Rename session</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/chat/sessions/{id}</code></td><td>Delete session + all messages</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num teal">6</div>
+    <h2 class="section-title">Module 6 — Analytics &amp; Weak-Topic Detection</h2>
+  </div>
+
+  <h3>Purpose</h3>
+  <p>The analytics module aggregates all learning activity into a single dashboard endpoint. It surfaces performance trends, study streaks, weak topics, document usage, and time investment — giving students and instructors a complete picture of progress.</p>
+
+  <h3>AnalyticsSummary Response Schema</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Source</th></tr>
+      <tr><td><code>total_documents</code></td><td>int</td><td>COUNT(documents WHERE owner_id = uid)</td></tr>
+      <tr><td><code>total_quizzes</code></td><td>int</td><td>COUNT(quizzes)</td></tr>
+      <tr><td><code>total_flashcard_decks</code></td><td>int</td><td>COUNT(flashcard_decks)</td></tr>
+      <tr><td><code>total_chat_sessions</code></td><td>int</td><td>COUNT(chat_sessions)</td></tr>
+      <tr><td><code>average_quiz_score</code></td><td>float</td><td>AVG(quiz_attempts.score)</td></tr>
+      <tr><td><code>total_study_time_minutes</code></td><td>float</td><td>SUM(study_sessions.duration_minutes)</td></tr>
+      <tr><td><code>documents_by_type</code></td><td>dict</td><td>GROUP BY file_type</td></tr>
+      <tr><td><code>quiz_scores_over_time</code></td><td>list</td><td>Last 30 days, ordered by completed_at</td></tr>
+      <tr><td><code>activity_heatmap</code></td><td>list</td><td>Daily study session counts, last 90 days</td></tr>
+      <tr><td><code>weekly_study_minutes</code></td><td>list</td><td>ISO week buckets, last 8 weeks</td></tr>
+      <tr><td><code>streak</code></td><td>StreakInfo</td><td>Computed from study_sessions timestamps</td></tr>
+      <tr><td><code>top_documents</code></td><td>list[DocumentStat]</td><td>Ranked by quiz+deck count</td></tr>
+    </table>
+  </div>
+
+  <h3>Streak Calculation Algorithm</h3>
+  <pre><code><span class="cm"># _compute_streak() in analytics.py</span>
+unique_days = sorted(set(session.date() <span class="kw">for</span> session <span class="kw">in</span> sessions), reverse=<span class="kw">True</span>)
+
+current = <span class="num">0</span>
+<span class="kw">if</span> unique_days[<span class="num">0</span>] &gt;= today - timedelta(days=<span class="num">1</span>):
+    current = <span class="num">1</span>
+    <span class="kw">for</span> i <span class="kw">in range</span>(<span class="num">1</span>, <span class="fn">len</span>(unique_days)):
+        <span class="kw">if</span> (unique_days[i-<span class="num">1</span>] - unique_days[i]).days == <span class="num">1</span>:
+            current += <span class="num">1</span>
+        <span class="kw">else</span>:
+            <span class="kw">break</span></code></pre>
+
+  <h3>Weak-Topic Detection</h3>
+  <p>Weak topics emerge from two signals that are already captured in the database:</p>
+  <div class="card-row">
+    <div class="card">
+      <h3>Signal 1 — Quiz Score by Document</h3>
+      <p>Each <code>QuizAttempt</code> links back through <code>Quiz.document_id</code>. The <code>DocumentStat.avg_quiz_score</code> field in <code>top_documents</code> gives a per-source-material average. Any document whose average score falls below 60% is a candidate weak topic.</p>
+    </div>
+    <div class="card">
+      <h3>Signal 2 — Flashcard Ease Factor</h3>
+      <p>Cards stuck at <code>ease_factor == 1.3</code> (the SM-2 floor) have been answered incorrectly repeatedly. A <code>GET /flashcards/{deck_id}/due</code> call with filter <code>ease_factor ≤ 1.5</code> reveals exactly which concepts the student struggles with.</p>
+    </div>
+  </div>
+
+  <h3>Study Session Tracking</h3>
+  <p><code>StudySession</code> rows are created by the frontend at the start of each learning activity (quiz, flashcard review, chat) and closed with a duration when the activity ends. This populates <code>activity_heatmap</code> and <code>weekly_study_minutes</code> without any client-side computation.</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>activity_type</th><th>Created when</th><th>Closed when</th></tr>
+      <tr><td><code>quiz</code></td><td>User opens quiz taker</td><td>Quiz submitted (<code>time_taken_seconds</code>)</td></tr>
+      <tr><td><code>flashcard</code></td><td>User opens deck study</td><td>Deck complete / user exits</td></tr>
+      <tr><td><code>chat</code></td><td>(optional) Session created</td><td>Session deleted or manually ended</td></tr>
+      <tr><td><code>document</code></td><td>Document viewed</td><td>Navigation away</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num gray">7</div>
+    <h2 class="section-title">Cross-Cutting: AI Provider Abstraction</h2>
+  </div>
+
+  <p>All six modules share a single entry point into the AI layer: <code>_call_llm(system_prompt, user_prompt, max_tokens)</code>. This function dispatches to the configured provider and applies the retry policy transparently.</p>
+
+  <pre><code><span class="kw">async def</span> <span class="fn">_call_llm</span>(system, user, max_tokens=<span class="num">2048</span>) -&gt; str:
+    <span class="kw">for</span> attempt <span class="kw">in range</span>(<span class="num">1</span>, MAX_RETRIES + <span class="num">1</span>):
+        <span class="kw">try</span>:
+            <span class="kw">if</span> settings.AI_PROVIDER == <span class="st">"watsonx"</span>:
+                <span class="kw">return await</span> <span class="fn">_call_watsonx</span>(system, user, max_tokens)
+            <span class="kw">else</span>:
+                <span class="kw">return await</span> <span class="fn">_call_openai</span>(system, user, max_tokens)
+        <span class="kw">except</span> Exception <span class="kw">as</span> exc:
+            <span class="kw">if</span> attempt &lt; MAX_RETRIES:
+                <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(RETRY_BASE ** attempt)
+    <span class="kw">raise</span> RuntimeError(<span class="st">"AI provider unavailable"</span>)</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>Concern</th><th>OpenAI</th><th>IBM watsonx.ai</th></tr>
+      <tr><td>Client</td><td>Async <code>AsyncOpenAI</code></td><td>Sync SDK → <code>asyncio.to_thread()</code></td></tr>
+      <tr><td>History format</td><td>Structured <code>messages[]</code> array</td><td>Flat <code>[ROLE]: text</code> string</td></tr>
+      <tr><td>Model config</td><td><code>OPENAI_MODEL</code> (default: gpt-4o-mini)</td><td><code>WATSONX_MODEL</code> (default: llama-3-3-70b)</td></tr>
+      <tr><td>Auth</td><td><code>OPENAI_API_KEY</code></td><td><code>WATSONX_API_KEY</code> + <code>WATSONX_PROJECT_ID</code></td></tr>
+      <tr><td>JSON fences</td><td>Handled by <code>_extract_json()</code></td><td>Handled by <code>_extract_json()</code></td></tr>
+    </table>
+  </div>
+
+  <div class="callout green">
+    <strong>Adding a third provider</strong> (e.g., Anthropic Claude, Mistral) requires only: (1) add a new <code>_call_anthropic()</code> function, (2) add <code>"anthropic"</code> to the <code>AI_PROVIDER</code> validator, (3) add a branch in <code>_call_llm()</code>. All six feature modules are unaffected.
+  </div>
+</div>
+
+
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num gray">8</div>
+    <h2 class="section-title">Data Model Summary</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>Table</th><th>Key Columns</th><th>Serves Module</th></tr>
+      <tr>
+        <td><code>users</code></td>
+        <td>id, email, username, hashed_password, role, last_login_at</td>
+        <td>Auth (all modules)</td>
+      </tr>
+      <tr>
+        <td><code>documents</code></td>
+        <td>id, owner_id, file_type, status, raw_text, summary, key_concepts[], word_count</td>
+        <td>Summarization, Quiz, Flashcards, Chat</td>
+      </tr>
+      <tr>
+        <td><code>quizzes</code></td>
+        <td>id, owner_id, document_id, difficulty, questions (JSON), num_questions</td>
+        <td>Quiz</td>
+      </tr>
+      <tr>
+        <td><code>quiz_attempts</code></td>
+        <td>id, quiz_id, user_id, answers (JSON), score, correct_answers, time_taken_seconds, completed_at</td>
+        <td>Quiz, Analytics</td>
+      </tr>
+      <tr>
+        <td><code>flashcard_decks</code></td>
+        <td>id, owner_id, document_id, title</td>
+        <td>Flashcards</td>
+      </tr>
+      <tr>
+        <td><code>flashcards</code></td>
+        <td>id, deck_id, front, back, hint, ease_factor, interval_days, repetitions, next_review</td>
+        <td>Flashcards, Recommendations</td>
+      </tr>
+      <tr>
+        <td><code>chat_sessions</code></td>
+        <td>id, owner_id, document_id, title</td>
+        <td>Chat</td>
+      </tr>
+      <tr>
+        <td><code>chat_messages</code></td>
+        <td>id, session_id, role, content, tokens_used, created_at</td>
+        <td>Chat</td>
+      </tr>
+      <tr>
+        <td><code>study_sessions</code></td>
+        <td>id, user_id, activity_type, resource_id, duration_minutes, score, ended_at</td>
+        <td>Analytics, Recommendations</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>Key Design Decisions</h3>
+  <ul>
+    <li><strong>UUIDs everywhere</strong> — no integer sequences, making all IDs safe to expose in URLs.</li>
+    <li><strong>JSON columns</strong> for <code>questions[]</code>, <code>answers[]</code>, <code>key_concepts[]</code> — avoids a separate join table while keeping data queryable in PostgreSQL.</li>
+    <li><strong>SET NULL on document delete</strong> for quizzes, decks, and chat sessions — preserves quiz/deck history even after the source file is removed.</li>
+    <li><strong>CASCADE delete</strong> from user → all owned data — a single row deletion in <code>users</code> cleans up everything.</li>
+    <li><strong>Composite indexes</strong> on <code>(owner_id, created_at)</code> for list queries to avoid full table scans.</li>
+  </ul>
+</div>
+
+
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num gray">9</div>
+    <h2 class="section-title">API Surface Reference</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>Module</th><th>Endpoint</th><th>Method</th></tr>
+      <tr><td rowspan="4">Auth</td><td><code>/api/v1/auth/register</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/auth/login</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/auth/refresh</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/auth/me</code></td><td>GET / PUT</td></tr>
+      <tr><td rowspan="5">Documents</td><td><code>/api/v1/documents/upload</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/documents/</code></td><td>GET (paginated)</td></tr>
+      <tr><td><code>/api/v1/documents/{id}</code></td><td>GET / PATCH / DELETE</td></tr>
+      <tr><td><code>/api/v1/documents/{id}/summarize</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/documents/{id}/reprocess</code></td><td>POST</td></tr>
+      <tr><td rowspan="4">Quizzes</td><td><code>/api/v1/quizzes/generate</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/quizzes/</code></td><td>GET</td></tr>
+      <tr><td><code>/api/v1/quizzes/{id}/submit</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/quizzes/{id}/attempts</code></td><td>GET</td></tr>
+      <tr><td rowspan="5">Flashcards</td><td><code>/api/v1/flashcards/generate</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/flashcards/</code></td><td>GET</td></tr>
+      <tr><td><code>/api/v1/flashcards/{id}</code></td><td>GET / PATCH / DELETE</td></tr>
+      <tr><td><code>/api/v1/flashcards/{id}/due</code></td><td>GET</td></tr>
+      <tr><td><code>/api/v1/flashcards/cards/{id}/review</code></td><td>POST</td></tr>
+      <tr><td rowspan="3">Chat</td><td><code>/api/v1/chat/sessions</code></td><td>POST / GET</td></tr>
+      <tr><td><code>/api/v1/chat/sessions/{id}</code></td><td>GET / PATCH / DELETE</td></tr>
+      <tr><td><code>/api/v1/chat/sessions/{id}/messages</code></td><td>POST</td></tr>
+      <tr><td>Analytics</td><td><code>/api/v1/analytics/summary</code></td><td>GET</td></tr>
+      <tr><td rowspan="2">Study Sessions</td><td><code>/api/v1/study-sessions/start</code></td><td>POST</td></tr>
+      <tr><td><code>/api/v1/study-sessions/{id}/end</code></td><td>POST</td></tr>
+    </table>
+  </div>
+
+  <p class="muted">All endpoints require a Bearer JWT in <code>Authorization</code> header. The interactive Swagger docs are available at <code>http://localhost:8000/docs</code> when running locally.</p>
+</div>
+
+
+<div class="section" id="s10">
+  <div class="section-header">
+    <div class="section-num gray">10</div>
+    <h2 class="section-title">Extension Points &amp; Future Work</h2>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>AI Recommendations Endpoint</h3>
+      <p>Add <code>POST /analytics/recommendations</code> — use <code>explain_concept()</code> to generate a personalized study plan for documents with <code>avg_quiz_score &lt; 60</code> and list due flashcard decks by ease factor.</p>
+    </div>
+    <div class="card">
+      <h3>Embedding-Based Search</h3>
+      <p>Store OpenAI embeddings of document chunks in a <code>pgvector</code> column. Enable semantic similarity search across all uploaded material — both for the chatbot's retrieval and cross-document recommendation.</p>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="card">
+      <h3>Streaming Chat Responses</h3>
+      <p>Replace the single-response <code>chat_with_tutor()</code> with an <code>AsyncGenerator</code> that streams tokens via Server-Sent Events. Both OpenAI and watsonx support streaming; the frontend textarea can render tokens as they arrive.</p>
+    </div>
+    <div class="card">
+      <h3>Multi-Document Chat Context</h3>
+      <p>Allow a chat session to link multiple documents. The route would concatenate the top-<em>k</em> retrieved chunks (via embedding cosine similarity) instead of the full text of one document.</p>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="card">
+      <h3>Per-Question Weak-Topic Tags</h3>
+      <p>Add a <code>topic_tag</code> field to each question in the <code>Quiz.questions</code> JSON. Track incorrect answers by tag across attempts. Surface tag-level accuracy in analytics to pinpoint sub-topics, not just documents.</p>
+    </div>
+    <div class="card">
+      <h3>Adaptive Quiz Difficulty</h3>
+      <p>Read the student's rolling 7-day average score per document and automatically adjust the <code>difficulty</code> parameter passed to <code>generate_quiz()</code>: promote to <em>hard</em> after 80%+, drop to <em>easy</em> after consecutive failures.</p>
+    </div>
+  </div>
+
+  <h3>Deployment Checklist</h3>
+  <ul>
+    <li>Set <code>AI_PROVIDER</code>, API keys, and <code>SECRET_KEY</code> in <code>.env</code> before first run.</li>
+    <li>Run <code>docker compose up --build</code> — starts FastAPI + PostgreSQL with health checks and named volumes.</li>
+    <li>Run <code>alembic upgrade head</code> inside the container to apply schema migrations.</li>
+    <li>The <code>UPLOAD_DIR</code> volume must be persisted across container restarts (already configured in <code>docker-compose.yml</code>).</li>
+    <li>For production, set <code>MAX_FILE_SIZE_MB</code>, configure an object store (S3/COS) in <code>document_service.py</code>, and add a rate-limit middleware on AI-calling routes.</li>
+  </ul>
+</div>
+
+
+<div class="doc-footer">Made with IBM Bob</div>
+
+</body>
+</html>

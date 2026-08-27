@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        working-directory: study-buddy
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install aiosqlite  # SQLite async driver for tests
+
+      - name: Run linter (ruff)
+        working-directory: study-buddy
+        run: |
+          pip install ruff
+          ruff check app/ tests/ --output-format=github
+        continue-on-error: true  # warnings only, not blocking
+
+      - name: Run type checker (mypy)
+        working-directory: study-buddy
+        run: |
+          pip install mypy types-passlib
+          mypy app/ --ignore-missing-imports --no-error-summary
+        continue-on-error: true
+
+      - name: Run tests with coverage
+        working-directory: study-buddy
+        env:
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          SECRET_KEY: "ci-test-secret-key-not-for-production"
+          AI_PROVIDER: "openai"
+          OPENAI_API_KEY: "test-key"
+          DEBUG: "True"
+          UPLOAD_DIR: "/tmp/test-uploads"
+        run: |
+          pytest tests/ -v \
+            --tb=short \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=60 \
+            -m "not slow"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: study-buddy/coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: study-buddy
+        run: docker build -t ai-study-buddy:${{ github.sha }} .
+
+      - name: Test Docker image starts
+        working-directory: study-buddy
+        run: |
+          docker run -d \
+            --name test-app \
+            -e DATABASE_URL="sqlite+aiosqlite:///./test.db" \
+            -e SECRET_KEY="docker-test-key" \
+            -e AI_PROVIDER="openai" \
+            -e OPENAI_API_KEY="test" \
+            -e DEBUG="True" \
+            -p 8000:8000 \
+            ai-study-buddy:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:8000/health || (docker logs test-app && exit 1)
+          docker stop test-app

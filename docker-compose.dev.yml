@@ -1,0 +1,30 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.dev.yml — Development overrides
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Overrides:
+#   - Hot reload (--reload) for the app
+#   - Debug=True
+#   - Source code mounted as a volume for live editing
+#   - Docs UI enabled at /docs
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --log-level debug
+    environment:
+      DEBUG: "True"
+    volumes:
+      - .:/app
+      - uploads_data:/app/uploads
+    # Mount local .env directly in dev
+    env_file:
+      - .env

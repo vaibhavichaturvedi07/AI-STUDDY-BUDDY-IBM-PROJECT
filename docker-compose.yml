@@ -1,0 +1,112 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# AI Study Buddy — Docker Compose
+#
+# Services:
+#   db        PostgreSQL 16
+#   migrate   Alembic migrations (runs once, then exits)
+#   app       FastAPI application (waits for migrate to succeed)
+#
+# Volumes:
+#   postgres_data  — persistent DB data
+#   uploads_data   — user-uploaded documents
+#
+# Usage:
+#   cp .env.example .env && nano .env   # set SECRET_KEY, OPENAI_API_KEY, etc.
+#   docker compose up --build
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── PostgreSQL 16 ──────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     studybuddy
+      POSTGRES_PASSWORD: studybuddy
+      POSTGRES_DB:       studybuddy
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"           # remove in production (expose only to internal network)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studybuddy -d studybuddy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  # ─── Alembic migrations (one-shot) ──────────────────────────────────────────
+  migrate:
+    build: .
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        python -c \"
+import asyncio, asyncpg, os, sys, time
+url = os.environ.get('DATABASE_URL','').replace('postgresql+asyncpg://','')
+for i in range(30):
+    try:
+        asyncio.run(asyncpg.connect(dsn='postgresql://' + url))
+        print('Database ready')
+        sys.exit(0)
+    except Exception as e:
+        print(f'Attempt {i+1}/30: {e}')
+        time.sleep(2)
+sys.exit(1)
+        \" &&
+        echo 'Running Alembic migrations...' &&
+        alembic upgrade head &&
+        echo 'Migrations complete'
+      "
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://studybuddy:studybuddy@db:5432/studybuddy"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  # ─── FastAPI Application ─────────────────────────────────────────────────────
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://studybuddy:studybuddy@db:5432/studybuddy"
+      DEBUG: "False"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

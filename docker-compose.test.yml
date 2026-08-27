@@ -1,0 +1,30 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.test.yml — CI/test environment
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml run tests
+#
+# Runs pytest with coverage against an ephemeral in-memory database.
+# AI calls are mocked — no API key required.
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  tests:
+    build: .
+    command: >
+      sh -c "pip install aiosqlite &&
+             pytest tests/ -v --tb=short
+             --cov=app --cov-report=term-missing
+             -m 'not slow'"
+    environment:
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+      SECRET_KEY: "test-secret-key-not-for-production"
+      AI_PROVIDER: "openai"
+      OPENAI_API_KEY: "test-key"
+      DEBUG: "True"
+      UPLOAD_DIR: "/tmp/test-uploads"
+    volumes:
+      - .:/app
+    profiles:
+      - test
